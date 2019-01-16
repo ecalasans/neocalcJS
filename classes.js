@@ -64,8 +64,7 @@ var hv = {
     },
     "getMg" : function () {
         return this.mg;
-    }
-,
+    },
 
     //Cálculo do volume de eletrólitos
     "volNa" : function () {
@@ -92,6 +91,13 @@ var hv = {
         return (100 * gr_glicose) / this.volumeCalculo();
     },
 
+    //Concentração Real
+    "concentracaoReal" : function () {
+        return (this.volumeGlic10()*0.1 + this.volumeGlic50()*0.5 + this.volumeGlic5()*0.05)/
+            this.volumeTotal();
+    },
+
+
     //Volume de glicose a 50%
     "volumeGlic50" : function () {
         var resultado = 0.0;
@@ -114,7 +120,20 @@ var hv = {
             resultado = this.volumeCalculo() - this.volumeGlic50()
         }
         return resultado;
+    },
+
+    "volumeABD" : function () {
+        var resultado = 0.0;
+
+        if (this.concentracaoTeorica() < 5.0){
+            resultado = this.volumeCalculo() - (this.volumeGlic50() + this.volNa() + this.volCa()
+                + this.volK() + this.volMg());
+        }
+        return resultado;
+    },
+
+    "volumeTotal" : function () {
+        return this.volumeGlic5() + this.volumeGlic50() + this.volumeGlic10() + this.volumeABD() +
+            this.volNa() + this.volK() + this.volCa() + this.volMg();
     }
-
-
 }
