@@ -115,9 +115,23 @@ class HV {
     }
 
     //Concentração Real
-    concentracaoReal() {
-        return (this.volumeGlic10()*0.1 + this.volumeGlic50()*0.5 + this.volumeGlic5()*0.05)/
-            this.volumeTotal();
+    concentracaoReal(sol_glic) {
+        var conc_real = 0;
+
+        switch (sol_glic) {
+            case 0:  //Glicose 5%
+                conc_real = (this.volumeGlic5()* 0.05 + this.volumeGlic50()*0.5)/this.volumeTotal();
+                break;
+
+            case 1:  //Glicose 10%
+                conc_real = this.volumeGlic10()*0.1 / this.volumeTotal();
+
+            default:
+                conc_real = (this.volumeGlic5()* 0.05 + this.volumeGlic50()*0.5)/this.volumeTotal();
+                break;
+        }
+
+        return conc_real;
     }
 
     //Volume de glicose a 50%
@@ -173,6 +187,7 @@ class HV {
                     this.volNa() + this.volK() + this.volCa() + this.volMg();
                 break;
         }
+        return vt;
 
     }
 
@@ -182,20 +197,128 @@ class HV {
         arq.peso = this.peso;
         arq.volume = this.volume;
         arq.vig = this.vig;
-        arq.concentracaoTeorica = this.concentracaoTeorica();
-        arq.concentracaoReal = this.concentracaoReal();
-        arq.vGlic5 = this.volumeGlic5();
-        arq.vGlic10 = this.volumeGlic10();
-        arq.vGlic50 = this.volumeGlic50();
-        arq.vABD = this.volumeABD();
-        arq.vCa = this.volCa();
-        arq.vNa = this.volNa();
-        arq.vK = this.volK();
-        arq.vMg = this.volMg();
-        arq.volTotal = this.volumeTotal();
+        arq.concentracaoTeorica = this.concentracaoTeorica().toFixed(1);
+        arq.concentracaoReal = this.concentracaoReal(0).toFixed(1);
+        arq.vGlic5 = this.volumeGlic5().toFixed(1);
+        arq.vGlic10 = this.volumeGlic10().toFixed(1);
+        arq.vGlic50 = this.volumeGlic50().toFixed(1);
+        arq.vABD = this.volumeABD().toFixed(1);
+        arq.vCa = this.volCa().toFixed(1);
+        arq.vNa = this.volNa().toFixed(1);
+        arq.vK = this.volK().toFixed(1);
+        arq.vMg = this.volMg().toFixed(1);
+        arq.volTotal= this.volumeTotal(0).toFixed(1);
 
         return JSON.stringify(arq);
     }
+}
+
+
+class NPT extends HV{
+    constructor(peso, volume, vig, aac, lip){
+        super(peso, volume, vig);
+        this.aac = aac;
+        this.lip = lip;
+        this.fc = (this.volumeCalculo() + 25) / this.volumeCalculo();
+    }
+
+    //Sets e gets
+    //Aminoácidos
+    getAac(){
+        return this.aac;
+    }
+
+    setAac(dose_aac){
+        this.aac = dose_aac;
+    }
+
+    //Lipídios
+    getLip(){
+        return this.lip;
+    }
+
+    setLip(dose_lip){
+        this.lip = dose_lip;
+    }
+
+    //Fósforo
+    setP(dose_p){
+        this.p = dose_p;
+    }
+
+    getP(){
+        return this.p;
+    }
+
+    //Vitaminas
+    setOpVit(opcao){
+        this.optVit = opcao;
+    }
+
+    getOptVit(){
+        return this.optVit;
+    }
+
+    //Oligoelementos
+    setOpOligo(opcao){
+        this.opOligo = opcao;
+    }
+
+    getOpOligo(){
+        return this.opOligo;
+    }
+
+    //Fator de correção - para um equipo de 25mL
+    getFC(){
+        return this.fc;
+    }
+
+    setFC(volume_equipo){
+        this.fc = (this.volumeCalculo() + volume_equipo) / this.volumeCalculo();
+    }
+
+    //Cálculo dos volumes - sobrecarrega métodos de HV para multiplicar pelo FC
+    //Eletrólitos
+    volNa(){
+        var resultado = 0;
+        if((this.p != 0) & (this.na >= 2)){
+            resultado = super.volNa() * this.fc;
+        }
+
+        return resultado;
+    }
+
+    volCa(){
+        return super.volCa() * this.fc;
+    }
+
+    volMg(){
+        return super.volMg() * this.fc;
+    }
+
+    volK(){
+        return super.volK() * this.fc;
+    }
+
+    volP(){
+        return this.peso * this.p * this.fc;
+    }
+
+    //Nutrientes
+    volAac(){
+        return this.peso * this.aac * 10 * this.fc;
+    }
+
+    volLip(){
+        return this.peso * this.lip * 5 * this.fc;
+    }
+
+    volGlic(){
+        return super.volumeGlic50() * this.fc;
+    }
+
+
+
 }
 
 
