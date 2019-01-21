@@ -314,14 +314,154 @@ class NPT extends HV{
     }
 
     volGlic(){
-        return super.volumeGlic50() * this.fc;
+        return this.peso * this.vig * 2 * 1.44 * this.fc;
     }
 
+    volVit(){
+        var vitaminas = [0, 0];
 
+        switch (this.optVit) {
+            case 0:
+                vitaminas[0] = 0;
+                break;
+
+            case 1:  //Frutovitam
+                vitaminas[0] = this.peso * 2.0 * this.fc;
+                break;
+
+            case 2:  // Trezevit A/B
+                if (this.peso >= 3.0){
+                    vitaminas[0] = 5 * this.peso * this.fc;
+                    vitaminas[1] = 5 * this.peso * this.fc;
+                } else if ((this.peso > 1.0) && (this.peso < 3.0)){
+                    vitaminas[0] = 3.25 * this.peso * this.fc;
+                    vitaminas[1] = 3.25 * this.peso * this.fc;
+                } else if (this.peso <= 1.0){
+                    vitaminas[0] = 1.5 * this.peso * this.fc;
+                    vitaminas[1] = 1.5 * this.peso * this.fc;
+                }
+                break;
+
+            case 3:  //Polivit A/B
+                if (this.peso <=10.0){
+                    vitaminas[0] = (this.peso * 4.0 * this.fc);
+                    vitaminas[1] = (this.peso * 2.0 * this.fc);
+                } else {
+                    vitaminas[0] = 10.0;
+                    vitaminas[1] = 5.0;
+                }
+                break;
+
+            default:
+                vitaminas[0] = 5 * this.peso * this.fc;
+                vitaminas[1] = 5 * this.peso * this.fc;
+
+        }
+
+        return vitaminas;
+    }
+
+    vTotalVit(vitaminas){
+        return vitaminas[0] + vitaminas[1];
+    }
+
+    volOligo(){
+        var resultado = 0.0;
+
+        switch (this.opOligo) {
+            case 0:
+                break;
+
+            case 1:  //Ped-Element
+                resultado = this.peso * 0.2 * this.fc;
+                break;
+
+            case 2:  //Oliped
+                resultado = this.peso *  this.fc;
+                break;
+
+            case 3:  //Ad-Element
+                resultado = this.peso * 0.05 * this.fc;
+                break;
+
+            case 4:  //Politrace 4
+                resultado = this.peso * 0.1 * this.fc;
+                break;
+
+            case 5:  //Tracitrans Plus
+                resultado = this.peso * 0.3 * this.fc;
+                break;
+        }
+
+        return resultado;
+    }
+
+    kcalGlic(){
+        return 3.4 * this.peso * this.vig * 1.44;
+    }
+
+    kcalLip(){
+        return 9 * this.peso * this.lip;
+    }
+
+    kcalAAC(){
+        return 4 * this.peso * this.aac;
+    }
+
+    //Volume de ABD para completar solução
+    volABD(){
+        return (this.volumeCalculo() * this.fc) - (this.volGlic() + this.volAac() + this.volLip() +
+            this.volCa() + this.volNa() + this.volK() + this.volMg() + this.volP() + this.vTotalVit(this.volVit()) +
+            this.volOligo());
+    }
+
+    volumeTotalNPT(){
+        return this.volGlic() + this.volAac() + this.volLip() +
+            this.volCa() + this.volNa() + this.volK() + this.volMg() + this.volP() + this.vTotalVit(this.volVit()) +
+            this.volOligo() + this.volABD();
+    }
+
+    volInfusao(){
+        return this.volumeTotalNPT() / this.fc;
+    }
+
+    mlH(){
+        return this.volInfusao() / 24;
+    }
+
+    toJSON(){
+        super.toJSON();
+
+        var arq = new Object();
+
+        arq.peso = this.peso;
+        arq.volume = this.volume;
+        arq.vig = this.vig;
+        arq.aac = this.aac;
+        arq.lip = this.lip;
+        arq.glicose_50 = this.volGlic().toFixed(1);
+        arq.proteinas = this.volAac().toFixed(1);
+        arq.lipidios = this.volLip().toFixed(1);
+        arq.abd = this.volABD().toFixed(1);
+        arq.ca = this.volCa().toFixed(1);
+        arq.na = this.volNa().toFixed(1);
+        arq.k = this.volK().toFixed(1);
+        arq.mg = this.volMg().toFixed(1);
+        arq.p = this.volP().toFixed(1);
+        arq.oligoelementos = this.volOligo().toFixed(1);
+        arq.vitaminas = this.volVit();
+        arq.kcal_glic = this.kcalGlic().toFixed(1);
+        arq.kcal_prot = this.kcalAAC().toFixed(1);
+        arq.kcal_lip = this.kcalLip().toFixed(1);
+        arq.volume_total = this.volumeTotalNPT().toFixed(1);
+        arq.volume_infusao = this.volInfusao().toFixed(1);
+        arq.mlh = this.mlH().toFixed(1);
+
+        return JSON.stringify(arq);
+
+    }
 
 }
-
-
 
 function calcular(){
     //Captura os valores dos campos
@@ -345,6 +485,36 @@ function calcular(){
     new_hv.setMg(dose_mg);
 
     alert(new_hv.toJSON());
+}
+
+function calcularNPT() {
+    //Captura os valores dos campos
+    var txt_peso = parseFloat(document.getElementById('np_peso').value);
+    var txt_volume = parseFloat(document.getElementById('np_volume').value);
+    var txt_vig = parseFloat(document.getElementById('np_vig').value);
+    var txt_aac = parseFloat(document.getElementById('np_aac').value);
+    var txt_lip = parseFloat(document.getElementById('np_lip').value);
+    var dose_na = parseFloat(document.getElementById('np_na').value);
+    var dose_k = parseFloat(document.getElementById('np_k').value);
+    var dose_ca = parseFloat(document.getElementById('np_ca').value);
+    var dose_mg = parseFloat(document.getElementById('np_mg').value);
+    var dose_p = parseFloat(document.getElementById('np_p').value);
+    var opcao_oligo = parseInt(document.getElementById('np_oligo').value);
+    var opcao_vitamina = parseInt(document.getElementById('np_vit').value);
+
+    var new_npt = new NPT(txt_peso, txt_volume, txt_vig, txt_aac, txt_lip);
+
+    new_npt.setCK(1);
+    new_npt.setCMg(1);
+    new_npt.setNa(dose_na);
+    new_npt.setCa(dose_ca);
+    new_npt.setMg(dose_mg);
+    new_npt.setK(dose_k);
+    new_npt.setP(dose_p);
+    new_npt.setOpVit(opcao_oligo);
+    new_npt.setOpOligo(opcao_vitamina);
+
+    alert(new_npt.toJSON());
 }
 
 
