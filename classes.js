@@ -1,6 +1,7 @@
 /*
 NeoCalcJs
 Desenvolvido por Eric Calasans
+Copyright © 2019
  */
 
 class HV {
