@@ -1,4 +1,8 @@
-//Objeto JSON HV
+/*
+NeoCalcJs
+Desenvolvido por Eric Calasans
+ */
+
 class HV {
     constructor(peso, volume, vig){
         this.peso = peso;
@@ -219,7 +223,7 @@ class NPT extends HV{
         super(peso, volume, vig);
         this.aac = aac;
         this.lip = lip;
-        this.fc = (this.volumeCalculo() + 25) / this.volumeCalculo();
+        this.fc = (this.volumeCalculo() + 20) / this.volumeCalculo();
     }
 
     //Sets e gets
@@ -322,7 +326,6 @@ class NPT extends HV{
 
         switch (this.optVit) {
             case 0:
-                vitaminas[0] = 0;
                 break;
 
             case 1:  //Frutovitam
@@ -396,6 +399,8 @@ class NPT extends HV{
         return resultado;
     }
 
+    //Controles da NPT
+
     kcalGlic(){
         return 3.4 * this.peso * this.vig * 1.44;
     }
@@ -406,6 +411,35 @@ class NPT extends HV{
 
     kcalAAC(){
         return 4 * this.peso * this.aac;
+    }
+
+    kcalNaoProteicas(){
+        return this.kcalGlic() + this.kcalLip();
+    }
+
+    ofertaCaloricaTotal(){   //em kcal/dia
+        return (this.kcalLip() + this.kcalGlic() + this.kcalAAC());
+    }
+
+    totalCations(){  //em mEq/L
+        return (this.volCa() * 0.45 + this.volMg() * 4) * 1000 / this.volumeTotalNPT();
+    }
+
+    totalN(){  //em g
+        return this.peso * this.aac / 6.25;
+    }
+
+    totalCa(){   //em mEq/L
+        return (this.volCa() * 450) / this.volumeTotalNPT();
+    }
+
+    relCaP(){
+        return (this.volCa() * 9) / (this.volP() * 31);
+    }
+
+    osmolaridade(){
+        return ((this.volAac() * 0.8 + this.volGlic() * 3.5 + this.volNa() * 6.8 + this.volP() * 6.2)
+            * 1000 / this.volumeTotalNPT()) - 50;
     }
 
     //Volume de ABD para completar solução
@@ -453,6 +487,13 @@ class NPT extends HV{
         arq.kcal_glic = this.kcalGlic().toFixed(1);
         arq.kcal_prot = this.kcalAAC().toFixed(1);
         arq.kcal_lip = this.kcalLip().toFixed(1);
+        arq.kcal_nao_proteicas = this.kcalNaoProteicas().toFixed(1);
+        arq.oferta_calorica_total = this.ofertaCaloricaTotal().toFixed(1);
+        arq.total_cations = this.totalCations().toFixed(1);
+        arq.total_ca = this.totalCa().toFixed(1);
+        arq.rel_ca_p = this.relCaP().toFixed(1);
+        arq.total_n = this.totalN().toFixed(1);
+        arq.osmolaridade = Math.round(this.osmolaridade());
         arq.volume_total = this.volumeTotalNPT().toFixed(1);
         arq.volume_infusao = this.volInfusao().toFixed(1);
         arq.mlh = this.mlH().toFixed(1);
@@ -511,8 +552,8 @@ function calcularNPT() {
     new_npt.setMg(dose_mg);
     new_npt.setK(dose_k);
     new_npt.setP(dose_p);
-    new_npt.setOpVit(opcao_oligo);
-    new_npt.setOpOligo(opcao_vitamina);
+    new_npt.setOpVit(opcao_vitamina);
+    new_npt.setOpOligo(opcao_oligo);
 
     alert(new_npt.toJSON());
 }
