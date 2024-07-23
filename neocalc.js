@@ -114,13 +114,13 @@ class HV {
 
     //Concentração Teórica
     concentracaoTeorica() {
-        var gr_glicose = 1.44 * this.peso * this.vig;
+        let gr_glicose = 1.44 * this.peso * this.vig;
         return (100 * gr_glicose) / this.volumeCalculo();
     }
 
     //Concentração Real
     concentracaoReal(sol_glic) {
-        var conc_real = 0;
+        let conc_real = 0;
 
         switch (sol_glic) {
             case 0:  //Glicose 5%
@@ -140,7 +140,7 @@ class HV {
 
     //Volume de glicose a 50%
     volumeGlic50() {
-        var resultado = 0.0;
+        let resultado = 0.0;
         if (this.concentracaoTeorica() > 5.0){
             resultado = (this.volumeCalculo() * (this.concentracaoTeorica() - 5.0) )/ 45;
         }
@@ -155,7 +155,7 @@ class HV {
 
     //Volume de glicose a 5%
     volumeGlic5() {
-        var resultado = 0.0;
+        let resultado = 0.0;
         if (this.concentracaoTeorica() > 5.0){
             resultado = this.volumeCalculo() - this.volumeGlic50()
         }
@@ -163,7 +163,7 @@ class HV {
     }
 
     volumeABD() {
-        var resultado = 0.0;
+        let resultado = 0.0;
 
         if (this.concentracaoTeorica() < 5.0){
             resultado = this.volumeCalculo() - (this.volumeGlic50() + this.volNa() + this.volCa()
@@ -173,7 +173,7 @@ class HV {
     }
 
     volumeTotal(sel_glic) {
-        var vt = 0;
+        let vt = 0;
 
         switch (sel_glic) {
             case 0:  //Glicose 50 + SG 5%
@@ -196,7 +196,7 @@ class HV {
     }
 
     toJSON() {
-        var arq = new Object()
+        let arq = new Object()
 
         arq.peso = this.peso;
         arq.volume = this.volume;
@@ -284,7 +284,7 @@ class NPT extends HV{
     //Cálculo dos volumes - sobrecarrega métodos de HV para multiplicar pelo FC
     //Eletrólitos
     volNa(){
-        var resultado = 0;
+        let resultado = 0;
         if((this.p != 0) & (this.na >= 2)){
             resultado = super.volNa() * this.fc;
         }
@@ -322,7 +322,7 @@ class NPT extends HV{
     }
 
     volVit(){
-        var vitaminas = [0, 0];
+        let vitaminas = [0, 0];
 
         switch (this.optVit) {
             case 0:
@@ -369,7 +369,7 @@ class NPT extends HV{
     }
 
     volOligo(){
-        var resultado = 0.0;
+        let resultado = 0.0;
 
         switch (this.opOligo) {
             case 0:
@@ -466,7 +466,7 @@ class NPT extends HV{
     toJSON(){
         super.toJSON();
 
-        var arq = new Object();
+        let arq = new Object();
 
         arq.peso = this.peso;
         arq.volume = this.volume;
@@ -509,13 +509,17 @@ class Drogas{
         this.peso = peso;
     }
 
-    //DVA
+//DVA
     setAdrenalina(adr){
         this.adrenalina = adr;
     }
 
     getAdrenalina(){
         return this.adrenalina;
+    }
+
+    volAdrenalina(){
+        return this.peso * this.adrenalina * 1.44;
     }
 
     setNoradrenalina(nora){
@@ -526,12 +530,20 @@ class Drogas{
         return this.noradrenalina;
     }
 
+    volNoradrenalina(){
+        return (this.peso * this.noradrenalina * 1.44);
+    }
+
     setDobutamina(dobuta){
         this.dobutamina = dobuta;
     }
 
     getDobutamina(){
         return this.dobutamina;
+    }
+
+    volDobutamina(){
+        return (this.peso * this.dobutamina * 1.44) * 0.08;
     }
 
     setDopamina(dopa){
@@ -542,12 +554,21 @@ class Drogas{
         return this.dopamina;
     }
 
+    volDopamina(){
+        return (this.peso * this.dopamina * 1.44) * 0.2;
+    }
+
     setMilrinone(mil){
         this.milrinone = mil;
     }
 
     getMilrinone(){
         return this.milrinone;
+    }
+
+    volMilrnone(){
+        let mcg = (this.peso * this.milrinone * 1440);
+        return mcg * 0.01 * 0.04;
     }
 
     setAdenosina(adenosina){
@@ -558,12 +579,20 @@ class Drogas{
         return this.adenosina;
     }
 
+    volAdenosina(){
+        return (this.peso * this.adenosina) / 300;
+    }
+
     setAmiodarona(amiodarona){
         this.amiodarona = amiodarona;
     }
 
     getAmiodarona(){
         return this.amiodarona;
+    }
+
+    volAmiodarona(){
+        return (this.peso * this.amiodarona) / 1.5;
     }
 
     setProstaglandina(prost){
@@ -574,7 +603,22 @@ class Drogas{
         return this.prostaglandina;
     }
 
+    volProstaglandina(conc){
+        let mcg = (this.peso * this.prostaglandina * 1440);
 
+        if(parseInt(conc) === 500){  //Solução 1mL/100mL diluente
+            return (mcg * 0.2) / 24;
+        } else {
+            // Calcula qte de frascos de 20mcg
+            let mcg = this.peso * this.prostaglandina * 1440
+            let frascos = Math.ceil(mcg *  0.05);
+            let volume = 4 * frascos;  // Para uma concentração de 5mcg/mL
+            return {
+                volume : volume,
+                mLh : (mcg * 0.2) / 24
+            }
+        }
+    }
 
     //Sedativos
     setFentanil(fent){
@@ -585,6 +629,14 @@ class Drogas{
         return this.fentanil;
     }
 
+    volFentanil(){
+        return this.peso * this.fentanil * 0.2;  //Diluido 1+9
+    }
+
+    volFentanilContinuo(){
+        return this.peso * this.fentanil * 0.48;
+    }
+
     setMidazolam(mid){
         this.midazolam = mid;
     }
@@ -593,12 +645,28 @@ class Drogas{
         return this.midazolam;
     }
 
+    volMidazolam(){
+        return this.peso * this.midazolam * 2; // Diluido 1+9
+    }
+
+    volMidazolamContinuo(){
+        return this.peso * this.midazolam * 4.8;
+    }
+
     setCetamina(cetamina){
         this.cetamina = cetamina;
     }
 
     getCetamina(){
         return this.cetamina;
+    }
+
+    volCetamina(){
+        return this.peso * this.cetamina * 0.2;  // Diluida 1+9
+    }
+
+    volCetaminaContinuo(){
+        return this.peso * this.cetamina * 0.48;
     }
 
     //Anticonvulsivantes
@@ -610,12 +678,28 @@ class Drogas{
         return this.fenobarbital;
     }
 
+    volAtaqueFenobarbital(){
+        return this.peso * this.fenobarbital * 0.01;
+    }
+
+    volFenobarbital(){
+        return this.peso * this.fenobarbital * 0.1;  // Diluido 1+9
+    }
+
     setFenitoina(fenito){
         this.fenitoina = fenito;
     }
 
     getFenitona(){
         return this.fenitoina;
+    }
+
+    volAtaqueFenitoina(){
+        return this.peso * this.fenitoina * 0.02;
+    }
+
+    volFenitoina(){
+        return this.peso * this.fenitoina * 0.2;
     }
 
 
@@ -628,12 +712,28 @@ class Drogas{
         return this.pancuronio;
     }
 
+    volPancuronio(){
+        return this.peso * this.pancuronio * 0.5;
+    }
+
+    volPancuronContinuo(){
+        return (this.peso * this.pancuronio * 0.72); // 1440min/2000mcg
+    }
+
     setRocuronio(roc){
         this.rocuronio = roc;
     }
 
     getRocuronio(){
         return this.rocuronio;
+    }
+
+    volRocuronio(){
+        return this.peso * this.rocuronio * 0.1;
+    }
+
+    volRocuronContinuo(){
+        return (this.peso * this.rocuronio * 0.144);
     }
 
 
@@ -646,12 +746,20 @@ class Drogas{
         return this.naloxone;
     }
 
+    volNaloxone(){
+        return this.peso * this.naloxone * 0.1;  // Diluir 0,1:9,9
+    }
+
     setFlumazenil(flu){
         this.flumazenil = flu;
     }
 
     getFlumazenil(){
         return this.flumazenil;
+    }
+
+    volFlumazenil(){
+        return this.peso * this.flumazenil * 0.1
     }
 
     setNeostigmine(neost){
@@ -661,20 +769,24 @@ class Drogas{
     getNeostigmine(){
         return this.neostigmine;
     }
+
+    volNeostigmine(){
+        return this.peso * this.neostigmine * 20;
+    }
 }
 
 function calcular(){
     //Captura os valores dos campos
-    var txt_peso = parseFloat(document.getElementById('hv_peso').value);
-    var txt_volume = parseFloat(document.getElementById('hv_volume').value);
-    var txt_vig = parseFloat(document.getElementById('hv_vig').value);
-    var dose_na = parseFloat(document.getElementById('hv_na').value);
-    var dose_k = parseFloat(document.getElementById('hv_k').value);
-    var dose_ca = parseFloat(document.getElementById('hv_ca').value);
-    var dose_mg = parseFloat(document.getElementById('hv_mg').value);
+    let txt_peso = parseFloat(document.getElementById('hv_peso').value);
+    let txt_volume = parseFloat(document.getElementById('hv_volume').value);
+    let txt_vig = parseFloat(document.getElementById('hv_vig').value);
+    let dose_na = parseFloat(document.getElementById('hv_na').value);
+    let dose_k = parseFloat(document.getElementById('hv_k').value);
+    let dose_ca = parseFloat(document.getElementById('hv_ca').value);
+    let dose_mg = parseFloat(document.getElementById('hv_mg').value);
 
     //Inicializa o objeto
-    var new_hv = new HV(txt_peso, txt_volume, txt_vig);
+    let new_hv = new HV(txt_peso, txt_volume, txt_vig);
 
     //Seta as doses
     new_hv.setCK(1);
@@ -689,20 +801,20 @@ function calcular(){
 
 function calcularNPT() {
     //Captura os valores dos campos
-    var txt_peso = parseFloat(document.getElementById('np_peso').value);
-    var txt_volume = parseFloat(document.getElementById('np_volume').value);
-    var txt_vig = parseFloat(document.getElementById('np_vig').value);
-    var txt_aac = parseFloat(document.getElementById('np_aac').value);
-    var txt_lip = parseFloat(document.getElementById('np_lip').value);
-    var dose_na = parseFloat(document.getElementById('np_na').value);
-    var dose_k = parseFloat(document.getElementById('np_k').value);
-    var dose_ca = parseFloat(document.getElementById('np_ca').value);
-    var dose_mg = parseFloat(document.getElementById('np_mg').value);
-    var dose_p = parseFloat(document.getElementById('np_p').value);
-    var opcao_oligo = parseInt(document.getElementById('np_oligo').value);
-    var opcao_vitamina = parseInt(document.getElementById('np_vit').value);
+    let txt_peso = parseFloat(document.getElementById('np_peso').value);
+    let txt_volume = parseFloat(document.getElementById('np_volume').value);
+    let txt_vig = parseFloat(document.getElementById('np_vig').value);
+    let txt_aac = parseFloat(document.getElementById('np_aac').value);
+    let txt_lip = parseFloat(document.getElementById('np_lip').value);
+    let dose_na = parseFloat(document.getElementById('np_na').value);
+    let dose_k = parseFloat(document.getElementById('np_k').value);
+    let dose_ca = parseFloat(document.getElementById('np_ca').value);
+    let dose_mg = parseFloat(document.getElementById('np_mg').value);
+    let dose_p = parseFloat(document.getElementById('np_p').value);
+    let opcao_oligo = parseInt(document.getElementById('np_oligo').value);
+    let opcao_vitamina = parseInt(document.getElementById('np_vit').value);
 
-    var new_npt = new NPT(txt_peso, txt_volume, txt_vig, txt_aac, txt_lip);
+    let new_npt = new NPT(txt_peso, txt_volume, txt_vig, txt_aac, txt_lip);
 
     new_npt.setCK(1);
     new_npt.setCMg(1);
@@ -716,5 +828,7 @@ function calcularNPT() {
 
     alert(new_npt.toJSON());
 }
+
+
 
 
